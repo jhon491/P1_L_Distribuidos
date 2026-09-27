@@ -6,57 +6,55 @@ import (
 	"microservicio/capaFachadaServices/dto"
 )
 
-// MetadataAudioService es la fachada (facade) que expone al controlador las
-// operaciones de negocio, ocultando el acceso al repositorio y la
-// conversión entre Entity y DTO.
-
+// MetadataAudioService expone la lógica de negocio para manejar tipos de audio.
 type MetadataAudioService struct {
-	repository *repository.MetadataAudioRepository
+	repository *repository.TipoAudioRepository
 }
 
-func NewMetadataAudioService(repository *repository.MetadataAudioRepository) *MetadataAudioService {
+func NewMetadataAudioService(repository *repository.TipoAudioRepository) *MetadataAudioService {
 	return &MetadataAudioService{repository: repository}
 }
 
-// RegistrarAudio recibe un DTO, lo convierte a Entity y lo registra en el
-// repositorio.
+// RegistrarTipo recibe un DTO y lo guarda en el catálogo de tipos.
+func (this *MetadataAudioService) RegistrarTipo(tipoDTO dto.TipoAudioDTO) {
+	var tipo entity.TipoAudio
+	tipo.SetIdTipo(tipoDTO.IdTipo)
+	tipo.SetNombreTipo(tipoDTO.NombreTipo)
 
-func (this *MetadataAudioService) RegistrarAudio(audioDTO dto.MetadataAudioDTO) {
-	var audio entity.MetadataAudio
-
-	audio.SetTitulo(audioDTO.Titulo)
-	audio.SetDuracion(audioDTO.Duracion)
-	audio.SetTipo(audioDTO.Tipo)
-	audio.SetDisponible(audioDTO.Disponible)
-
-	this.repository.RegistrarAudio(audio)
+	this.repository.RegistrarTipo(tipo)
 }
 
-// ConsultarAudio recibe un título, busca el Entity en el repositorio y lo
-// convierte a RespuestaMetadataAudioDTO con el código y mensaje según el
-// resultado de la búsqueda.
+// ConsultarTipo busca un tipo por su id y lo convierte a DTO de respuesta.
+func (this *MetadataAudioService) ConsultarTipo(id int) dto.RespuestaTipoAudioDTO {
+	var respuesta dto.RespuestaTipoAudioDTO
 
-func (this *MetadataAudioService) ConsultarAudio(titulo string) dto.RespuestaMetadataAudioDTO {
-
-	var respuesta dto.RespuestaMetadataAudioDTO
-
-	audio, encontrado := this.repository.BuscarAudio(titulo)
-
+	tipo, encontrado := this.repository.BuscarPorId(id)
 	if encontrado {
-		var audioDTO dto.MetadataAudioDTO
-		audioDTO.Titulo = audio.GetTitulo()
-		audioDTO.Duracion = audio.GetDuracion()
-		audioDTO.Tipo = audio.GetTipo()
-		audioDTO.Disponible = audio.GetDisponible()
-
-		respuesta.ObjAudio = audioDTO
+		respuesta.ObjTipo = dto.TipoAudioDTO{
+			IdTipo:     tipo.GetIdTipo(),
+			NombreTipo: tipo.GetNombreTipo(),
+		}
 		respuesta.Codigo = 200
-		respuesta.Mensaje = "Métadata del audio encontarda"
-	} else {
-		respuesta.Codigo = 400
-		respuesta.Mensaje = "La metadata del audio no se encontró"
+		respuesta.Mensaje = "Tipo de audio encontrado"
+		return respuesta
 	}
 
+	respuesta.Codigo = 400
+	respuesta.Mensaje = "El tipo de audio no se encontró"
 	return respuesta
+}
 
+// ListarTipos devuelve todos los tipos registrados.
+func (this *MetadataAudioService) ListarTipos() []dto.TipoAudioDTO {
+	tipos := this.repository.ListarTipos()
+	result := make([]dto.TipoAudioDTO, 0, len(tipos))
+
+	for _, tipo := range tipos {
+		result = append(result, dto.TipoAudioDTO{
+			IdTipo:     tipo.GetIdTipo(),
+			NombreTipo: tipo.GetNombreTipo(),
+		})
+	}
+
+	return result
 }

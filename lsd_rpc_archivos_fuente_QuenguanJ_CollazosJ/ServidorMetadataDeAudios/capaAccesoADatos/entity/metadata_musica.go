@@ -4,12 +4,21 @@ package entity
 // repositorio. Sus campos son privados (encapsulados) y se acceden mediante
 // los métodos Get/Set correspondientes.
 type MetadataMusica struct {
+	id                int
 	artistaPrincipal  string
 	album             string
 	genero            string
 	titulo            string
 	selloDiscografico string
 	anioLanzamiento   int
+}
+
+func (this *MetadataMusica) GetId() int {
+	return this.id
+}
+
+func (this *MetadataMusica) SetId(id int) {
+	this.id = id
 }
 
 func (this *MetadataMusica) GetArtistaPrincipal() string {

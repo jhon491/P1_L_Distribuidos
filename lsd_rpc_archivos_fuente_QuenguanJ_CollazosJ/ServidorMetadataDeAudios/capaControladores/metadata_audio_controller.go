@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"strconv"
 
 	service "microservicio/capaFachadaServices"
 	"microservicio/capaFachadaServices/dto"
@@ -9,8 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// MetadataAudioController expone los servicios REST de audio usando Gin.
-
+// MetadataAudioController expone los servicios REST del catálogo de tipos de audio.
 type MetadataAudioController struct {
 	service *service.MetadataAudioService
 }
@@ -19,37 +19,49 @@ func NewMetadataAudioController(service *service.MetadataAudioService) *Metadata
 	return &MetadataAudioController{service: service}
 }
 
-// RegistrarAudio - POST /audios
-// Recibe un MetadataAudioDTO en el body y lo registra a través de la
-// fachada de servicios.
-func (this *MetadataAudioController) RegistrarAudio(ctx *gin.Context) {
-	var audioDTO dto.MetadataAudioDTO
+// RegistrarTipo - POST /tipos
+func (this *MetadataAudioController) RegistrarTipo(ctx *gin.Context) {
+	var tipoDTO dto.TipoAudioDTO
 
-	if err := ctx.ShouldBindJSON(&audioDTO); err != nil {
+	if err := ctx.ShouldBindJSON(&tipoDTO); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"codigo":  http.StatusBadRequest,
-			"mensaje": "Los datos del audio son inválidos: " + err.Error(),
+			"mensaje": "Los datos del tipo de audio son inválidos: " + err.Error(),
 		})
 		return
 	}
 
-	this.service.RegistrarAudio(audioDTO)
+	this.service.RegistrarTipo(tipoDTO)
 
 	ctx.JSON(http.StatusCreated, gin.H{
-		"codigo":   http.StatusCreated,
-		"mensaje":  "Audio registrado correctamente",
-		"objAudio": audioDTO,
+		"codigo":  http.StatusCreated,
+		"mensaje": "Tipo de audio registrado correctamente",
+		"objTipo": tipoDTO,
 	})
 }
 
-// ConsultarAudio - GET /audios/:titulo
-// Consulta un audio por su título y responde con el código HTTP definido
-// por la fachada (200 si se encontró, 400 si no).
+// ConsultarTipo - GET /tipos/:idTipo
+func (this *MetadataAudioController) ConsultarTipo(ctx *gin.Context) {
+	idParam := ctx.Param("idTipo")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"codigo":  http.StatusBadRequest,
+			"mensaje": "El id del tipo de audio es inválido",
+		})
+		return
+	}
 
-func (this *MetadataAudioController) ConsultarAudio(ctx *gin.Context) {
-	titulo := ctx.Param("titulo")
-
-	respuesta := this.service.ConsultarAudio(titulo)
-
+	respuesta := this.service.ConsultarTipo(id)
 	ctx.JSON(respuesta.Codigo, respuesta)
+}
+
+// ListarTipos - GET /tipos
+func (this *MetadataAudioController) ListarTipos(ctx *gin.Context) {
+	tipos := this.service.ListarTipos()
+	ctx.JSON(http.StatusOK, gin.H{
+		"codigo":  http.StatusOK,
+		"mensaje": "Tipos de audio disponibles",
+		"tipos":   tipos,
+	})
 }

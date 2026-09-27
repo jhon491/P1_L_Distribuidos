@@ -2,71 +2,57 @@ package repository
 
 import "microservicio/capaAccesoADatos/entity"
 
-// MetadataAudioRepository es un repositorio que mantiene en memoria
-// el slice de audios y expone las operaciones de búsqueda y registro.
-
-type MetadataAudioRepository struct {
-	vectorMetadataAudios []entity.MetadataAudio
+// TipoAudioRepository gestiona en memoria los tipos de audio disponibles.
+type TipoAudioRepository struct {
+	vectorTipos []entity.TipoAudio
 }
 
-// NewMetadataAudioRepository crea el repositorio y lo precarga con la
-// metadata de audios de ejemplo.
-
-func NewMetadataAudioRepository() *MetadataAudioRepository {
-	this := &MetadataAudioRepository{}
-	this.CargarMetadataAudios()
-	return this
+func NewTipoAudioRepository() *TipoAudioRepository {
+	repo := &TipoAudioRepository{}
+	repo.CargarTipos()
+	return repo
 }
 
-// CargarMetadataAudios inicializa el vector con 5 audios de ejemplo.
+func (r *TipoAudioRepository) CargarTipos() {
+	var tipo1, tipo2, tipo3, tipo4 entity.TipoAudio
 
-func (this *MetadataAudioRepository) CargarMetadataAudios() {
-	var objAudio1, objAudio2, objAudio3, objAudio4, objAudio5 entity.MetadataAudio
+	tipo1.SetIdTipo(1)
+	tipo1.SetNombreTipo("Música")
 
-	objAudio1.SetTitulo("Cancion 1")
-	objAudio1.SetDuracion(10)
-	objAudio1.SetTipo("Música")
-	objAudio1.SetDisponible(true)
+	tipo2.SetIdTipo(2)
+	tipo2.SetNombreTipo("Podcast")
 
-	objAudio2.SetTitulo("Potcast 2")
-	objAudio2.SetDuracion(20)
-	objAudio2.SetTipo("Potcasts")
-	objAudio2.SetDisponible(false)
+	tipo3.SetIdTipo(3)
+	tipo3.SetNombreTipo("Audiolibro")
 
-	objAudio3.SetTitulo("Ruido Blanco 3")
-	objAudio3.SetDuracion(30)
-	objAudio3.SetTipo("Ruido Blanco")
-	objAudio3.SetDisponible(true)
+	tipo4.SetIdTipo(4)
+	tipo4.SetNombreTipo("Ruido Blanco")
 
-	objAudio4.SetTitulo("Audiolibro 4")
-	objAudio4.SetDuracion(40)
-	objAudio4.SetTipo("Audiolibros")
-	objAudio4.SetDisponible(true)
-
-	objAudio5.SetTitulo("Meditación 5")
-	objAudio5.SetDuracion(50)
-	objAudio5.SetTipo("Meditaciones guiadas")
-	objAudio5.SetDisponible(false)
-
-	this.vectorMetadataAudios = []entity.MetadataAudio{
-		objAudio1, objAudio2, objAudio3, objAudio4, objAudio5,
-	}
+	r.vectorTipos = []entity.TipoAudio{tipo1, tipo2, tipo3, tipo4}
 }
 
-// BuscarAudio recorre el vector buscando un audio por su título. Retorna el
-// audio encontrado y un booleano que indica si la búsqueda tuvo éxito.
+func (r *TipoAudioRepository) RegistrarTipo(tipo entity.TipoAudio) {
+	r.vectorTipos = append(r.vectorTipos, tipo)
+}
 
-func (this *MetadataAudioRepository) BuscarAudio(titulo string) (entity.MetadataAudio, bool) {
-	for _, audio := range this.vectorMetadataAudios {
-		if audio.GetTitulo() == titulo {
-			return audio, true
+func (r *TipoAudioRepository) BuscarPorId(id int) (entity.TipoAudio, bool) {
+	for _, tipo := range r.vectorTipos {
+		if tipo.GetIdTipo() == id {
+			return tipo, true
 		}
 	}
-	return entity.MetadataAudio{}, false
+	return entity.TipoAudio{}, false
 }
 
-// RegistrarAudio agrega un nuevo audio al vector.
+func (r *TipoAudioRepository) BuscarPorNombre(nombre string) (entity.TipoAudio, bool) {
+	for _, tipo := range r.vectorTipos {
+		if tipo.GetNombreTipo() == nombre {
+			return tipo, true
+		}
+	}
+	return entity.TipoAudio{}, false
+}
 
-func (this *MetadataAudioRepository) RegistrarAudio(audio entity.MetadataAudio) {
-	this.vectorMetadataAudios = append(this.vectorMetadataAudios, audio)
+func (r *TipoAudioRepository) ListarTipos() []entity.TipoAudio {
+	return r.vectorTipos
 }
