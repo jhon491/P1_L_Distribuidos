@@ -10,19 +10,48 @@ import (
 )
 
 type FachadaCliente struct {
-	clienteMetadata *capaComunicacion.ClienteMetadata
-	lector          *bufio.Reader
+	clienteMetadata  *capaComunicacion.ClienteMetadata
+	clienteStreaming *capaComunicacion.ClienteStreaming
+	// lineas recibe TODO lo que se escribe por teclado. Un único goroutine
+	// lee stdin, así el menú y la reproducción nunca compiten por la entrada.
+	lineas chan string
 }
 
 func NuevaFachadaCliente() *FachadaCliente {
-	return &FachadaCliente{
-		clienteMetadata: capaComunicacion.NuevoClienteMetadata(),
-		lector:          bufio.NewReader(os.Stdin),
+	streaming, err := capaComunicacion.NuevoClienteStreaming()
+	if err != nil {
+		fmt.Println("Error iniciando cliente de streaming:", err)
+	}
+	fachada := &FachadaCliente{
+		clienteMetadata:  capaComunicacion.NuevoClienteMetadata(),
+		clienteStreaming: streaming,
+		lineas:           make(chan string),
+	}
+	go fachada.leerTeclado()
+	return fachada
+}
+
+// leerTeclado es el único lector de stdin: envía cada línea al canal y lo
+// cierra si la entrada termina (Ctrl+D o stdin cerrado).
+func (this *FachadaCliente) leerTeclado() {
+	lector := bufio.NewReader(os.Stdin)
+	for {
+		texto, err := lector.ReadString('\n')
+		if texto != "" || err == nil {
+			this.lineas <- strings.TrimSpace(texto)
+		}
+		if err != nil {
+			close(this.lineas)
+			return
+		}
 	}
 }
 
 // EjecutarMenuPrincipal es el punto de entrada del ciclo de menús
 func (this *FachadaCliente) EjecutarMenuPrincipal() {
+	if this.clienteStreaming != nil {
+		defer this.clienteStreaming.Cerrar()
+	}
 	for {
 		fmt.Println("\n--- Spotify ---")
 		fmt.Println("1. Ver tipos de audio")
@@ -102,12 +131,12 @@ func (this *FachadaCliente) menuAudiosPorTipo(idTipo int, nombreTipo string) {
 		}
 
 		audioSeleccionado := respuesta.Audios[indice-1]
-		this.menuDetalleAudio(idTipo, audioSeleccionado.Id)
+		this.menuDetalleAudio(idTipo, nombreTipo, audioSeleccionado.Id, audioSeleccionado.Titulo)
 	}
 }
 
 // menuDetalleAudio muestra los metadatos completos y permite reproducir
-func (this *FachadaCliente) menuDetalleAudio(idTipo int, id int) {
+func (this *FachadaCliente) menuDetalleAudio(idTipo int, nombreTipo string, id int, titulo string) {
 	respuesta, err := this.clienteMetadata.ObtenerDetalleAudio(idTipo, id)
 	if err != nil {
 		fmt.Println("Error consultando detalle:", err)
@@ -126,7 +155,7 @@ func (this *FachadaCliente) menuDetalleAudio(idTipo int, id int) {
 		opcion := this.leerLinea()
 		switch opcion {
 		case "1":
-			this.reproducirAudio(id)
+			this.reproducirAudio(id, titulo, nombreTipo)
 		case "2":
 			return
 		default:
@@ -135,15 +164,46 @@ func (this *FachadaCliente) menuDetalleAudio(idTipo int, id int) {
 	}
 }
 
-// reproducirAudio es el punto donde más adelante se conecta el streaming por gRPC
-func (this *FachadaCliente) reproducirAudio(id int) {
-	fmt.Println("\n--- Reproduciendo audio ---")
-	fmt.Println("(Streaming por gRPC pendiente de conectar aquí)")
-	fmt.Println("1. Salir")
-	this.leerLinea()
+// reproducirAudio solicita el streaming por gRPC y reproduce el audio.
+// Mientras suena, el usuario puede presionar Enter para detenerlo.
+func (this *FachadaCliente) reproducirAudio(id int, titulo string, tipo string) {
+	if this.clienteStreaming == nil {
+		fmt.Println("El cliente de streaming no está disponible.")
+		return
+	}
+
+	fmt.Printf("\n--- Reproduciendo: %s ---\n", titulo)
+	fmt.Println("(presiona Enter para detener)")
+
+	detener := make(chan struct{})
+	terminado := make(chan struct{})
+
+	go func() {
+		defer close(terminado)
+		if err := this.clienteStreaming.ReproducirAudio(id, titulo, tipo, detener); err != nil {
+			fmt.Println("\nError reproduciendo audio:", err)
+		}
+	}()
+
+	// Se espera lo primero que ocurra: que termine la reproducción o que el
+	// usuario escriba algo. No queda ninguna lectura pendiente al terminar,
+	// por lo que la siguiente opción del menú no se pierde.
+	select {
+	case <-terminado:
+	case <-this.lineas:
+		close(detener)
+		<-terminado
+	}
 }
 
 func (this *FachadaCliente) leerLinea() string {
-	texto, _ := this.lector.ReadString('\n')
-	return strings.TrimSpace(texto)
+	texto, abierto := <-this.lineas
+	if !abierto {
+		fmt.Println("\nEntrada cerrada. Saliendo...")
+		if this.clienteStreaming != nil {
+			this.clienteStreaming.Cerrar()
+		}
+		os.Exit(0)
+	}
+	return texto
 }

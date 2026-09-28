@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package servicios;
+option go_package = "./serviciosAudio";
+
+service AudioService {
+  // Streaming de audio: el servidor devuelve un flujo de fragmentos
+  rpc AudioStream(AudioRequest) returns (stream AudioChunk);
+}
+
+message AudioRequest {
+  int32  id_audio     = 1; // Id del audio (el servidor busca audios/<id>.mp3)
+  string titulo_audio = 2; // Título (para la notificación a la cola)
+  string tipo_audio   = 3; // Tipo de audio (para la notificación a la cola)
+}
+
+message AudioChunk {
+  bytes data        = 1; // Fragmento de audio
+  int32 numero      = 2; // Número de secuencia del fragmento
+  int64 total_bytes = 3; // Tamaño total del archivo (para mostrar progreso)
+}
