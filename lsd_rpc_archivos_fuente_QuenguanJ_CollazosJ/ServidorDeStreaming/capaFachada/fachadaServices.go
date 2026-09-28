@@ -22,9 +22,9 @@ func ConfigurarPublisher(p *cola.RabbitPublisher) {
 
 // abrirArchivo actúa como fachada para obtener el archivo de la canción
 // usando la capa de acceso a datos.
-func abrirArchivo(idAudio int32) (*os.File, error) {
-	log.Printf("GetAudioFile llamado con id=%d", idAudio)
-	return capaaccesodatos.AbrirArchivo(idAudio)
+func abrirArchivo(tipoAudio string, idAudio int32) (*os.File, error) {
+	log.Printf("GetAudioFile llamado con tipo=%q id=%d", tipoAudio, idAudio)
+	return capaaccesodatos.AbrirArchivo(tipoAudio, idAudio)
 }
 
 // notificarReproduccion publica de forma asíncrona (goroutine) el evento de
@@ -50,7 +50,7 @@ func notificarReproduccion(titulo, tipo string) {
 // servidor limpio.
 func EnviarFragmentosAudio(req *pb.AudioRequest, stream pb.AudioService_AudioStreamServer) error {
 	log.Printf("Enviando fragmentos de audio para id=%d", req.IdAudio)
-	file, err := abrirArchivo(req.IdAudio)
+	file, err := abrirArchivo(req.TipoAudio, req.IdAudio)
 	if err != nil {
 		return err
 	}
