@@ -45,11 +45,16 @@ func procesarSubidaAudio(lector *bufio.Reader, fachada *administrador.FachadaAdm
 	ruta, _ := lector.ReadString('\n')
 	ruta = strings.TrimSpace(ruta)
 
+	fmt.Println("Tipos: 1=Música, 2=Podcast, 3=Audiolibro, 4=Ruido Blanco")
+	fmt.Print("Id del tipo: ")
+	idTipo, _ := lector.ReadString('\n')
+	idTipo = strings.TrimSpace(idTipo)
+
 	fmt.Print("Id del audio: ")
 	id, _ := lector.ReadString('\n')
 	id = strings.TrimSpace(id)
 
-	if err := fachada.SubirAudio(ruta, id); err != nil {
+	if err := fachada.SubirAudio(ruta, idTipo, id); err != nil {
 		fmt.Println("Error subiendo el audio:", err)
 	}
 }

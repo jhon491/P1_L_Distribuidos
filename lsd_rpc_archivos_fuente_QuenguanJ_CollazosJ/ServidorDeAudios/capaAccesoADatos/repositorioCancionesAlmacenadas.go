@@ -24,17 +24,28 @@ func GetRepositorioCanciones() *RepositorioCanciones {
 	return instancia
 }
 
-// GuardarCancion guarda el archivo MP3 en la carpeta 'audios'
-func (r *RepositorioCanciones) GuardarCancion(id string, data []byte) error {
+// rutaAudios es la carpeta compartida con ServidorDeStreaming (misma lógica
+// que allá): "../audios", o el valor de la variable RUTA_AUDIOS.
+func rutaAudios() string {
+	if r := os.Getenv("RUTA_AUDIOS"); r != "" {
+		return r
+	}
+	return filepath.Join("..", "audios")
+}
+
+// GuardarCancion guarda el MP3 como audios/<idTipo>_<id>.mp3, el mismo nombre
+// que ServidorDeStreaming busca al reproducir.
+func (r *RepositorioCanciones) GuardarCancion(idTipo string, id string, data []byte) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	// Crear carpeta si no existe
-	os.MkdirAll("../audios", os.ModePerm)
+	if err := os.MkdirAll(rutaAudios(), os.ModePerm); err != nil {
+		return fmt.Errorf("error creando la carpeta de audios: %v", err)
+	}
 
-	// Construir nombre del archivo: titulo_genero_artista.mp3
-	fileName := fmt.Sprintf("cancion_%s.mp3", id)
-	filePath := filepath.Join("..", "audios", fileName)
+	fileName := fmt.Sprintf("%s_%s.mp3", idTipo, id)
+	filePath := filepath.Join(rutaAudios(), fileName)
 
 	// Guardar archivo físico
 	err := os.WriteFile(filePath, data, 0644)

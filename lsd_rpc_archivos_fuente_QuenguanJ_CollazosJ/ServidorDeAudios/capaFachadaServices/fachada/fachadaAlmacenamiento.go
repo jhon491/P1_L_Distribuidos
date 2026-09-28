@@ -24,5 +24,5 @@ func NuevaFachadaAlmacenamiento() *FachadaAlmacenamiento {
 func (thisF *FachadaAlmacenamiento) GuardarCancion(objCancion dtos.CancionAlmacenarDTOInput, data []byte) error {
 	//Guarda archivo y registro en memoria
 	//Delegar en el repositorio de canciones para guardar el archivo y el registro en memoria
-	return thisF.repo.GuardarCancion(objCancion.Id, data)
+	return thisF.repo.GuardarCancion(objCancion.IdTipo, objCancion.Id, data)
 }

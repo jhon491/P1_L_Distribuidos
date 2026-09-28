@@ -19,7 +19,7 @@ func NuevaFachadaAdministrador() *FachadaAdministrador {
 }
 
 // SubirAudio arma la petición multipart/form-data y la envía al ServidorDeAudios
-func (this *FachadaAdministrador) SubirAudio(rutaArchivo string, id string) error {
+func (this *FachadaAdministrador) SubirAudio(rutaArchivo string, idTipo string, id string) error {
 	archivo, err := os.Open(rutaArchivo)
 	if err != nil {
 		return fmt.Errorf("no se pudo abrir el archivo: %v", err)
@@ -28,6 +28,11 @@ func (this *FachadaAdministrador) SubirAudio(rutaArchivo string, id string) erro
 
 	var cuerpo bytes.Buffer
 	escritor := multipart.NewWriter(&cuerpo)
+
+	// Campo "idTipo"
+	if err := escritor.WriteField("idTipo", idTipo); err != nil {
+		return fmt.Errorf("error escribiendo campo idTipo: %v", err)
+	}
 
 	// Campo "id"
 	if err := escritor.WriteField("id", id); err != nil {
@@ -61,7 +66,8 @@ func (this *FachadaAdministrador) SubirAudio(rutaArchivo string, id string) erro
 	defer respuesta.Body.Close()
 
 	if respuesta.StatusCode != http.StatusOK {
-		return fmt.Errorf("el servidor respondió con estado: %s", respuesta.Status)
+		motivo, _ := io.ReadAll(io.LimitReader(respuesta.Body, 512))
+		return fmt.Errorf("el servidor respondió con estado %s: %s", respuesta.Status, bytes.TrimSpace(motivo))
 	}
 
 	fmt.Println("Audio almacenado correctamente.")

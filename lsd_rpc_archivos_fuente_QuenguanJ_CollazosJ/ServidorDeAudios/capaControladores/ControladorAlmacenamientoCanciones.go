@@ -6,7 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 )
+
+// Los ids solo pueden ser números: evita nombres vacíos o rutas como "../x".
+var soloDigitos = regexp.MustCompile(`^[0-9]+$`)
 
 type ControladorAlmacenamientoCanciones struct {
 	fachada *capafachada.FachadaAlmacenamiento
@@ -40,8 +44,19 @@ func (thisC *ControladorAlmacenamientoCanciones) AlmacenarAudioCancion(w http.Re
 
 	// Leer los campos del DTO
 	dto := dtos.CancionAlmacenarDTOInput{
-		Id: r.FormValue("id"),
+		IdTipo: r.FormValue("idTipo"),
+		Id:     r.FormValue("id"),
 	}
 
-	thisC.fachada.GuardarCancion(dto, data)
+	if !soloDigitos.MatchString(dto.IdTipo) || !soloDigitos.MatchString(dto.Id) {
+		http.Error(w, "idTipo e id son obligatorios y deben ser numéricos", http.StatusBadRequest)
+		return
+	}
+
+	if err := thisC.fachada.GuardarCancion(dto, data); err != nil {
+		fmt.Println("Error almacenando canción:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Printf("Canción almacenada: tipo=%s id=%s\n", dto.IdTipo, dto.Id)
 }
