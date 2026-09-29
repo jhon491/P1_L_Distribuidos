@@ -12,8 +12,6 @@ import (
 type FachadaCliente struct {
 	clienteMetadata  *capaComunicacion.ClienteMetadata
 	clienteStreaming *capaComunicacion.ClienteStreaming
-	// lineas recibe TODO lo que se escribe por teclado. Un único goroutine
-	// lee stdin, así el menú y la reproducción nunca compiten por la entrada.
 	lineas chan string
 }
 

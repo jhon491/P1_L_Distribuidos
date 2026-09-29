@@ -28,7 +28,7 @@ func abrirArchivo(tipoAudio string, idAudio int32) (*os.File, error) {
 }
 
 // notificarReproduccion publica de forma asíncrona (goroutine) el evento de
-// reproducción en la cola. Así el envío del audio no espera a RabbitMQ.
+// reproducción en la cola.
 func notificarReproduccion(titulo, tipo string) {
 	if publisher == nil {
 		return
@@ -46,8 +46,7 @@ func notificarReproduccion(titulo, tipo string) {
 }
 
 // EnviarFragmentosAudio lee el archivo de la canción en chunks y los envía al
-// stream gRPC. Encapsula la lógica de lectura y envío para mantener el
-// servidor limpio.
+// stream gRPC.
 func EnviarFragmentosAudio(req *pb.AudioRequest, stream pb.AudioService_AudioStreamServer) error {
 	log.Printf("Enviando fragmentos de audio para id=%d", req.IdAudio)
 	file, err := abrirArchivo(req.TipoAudio, req.IdAudio)

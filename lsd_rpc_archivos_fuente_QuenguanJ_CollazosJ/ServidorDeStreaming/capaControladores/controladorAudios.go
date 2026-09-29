@@ -14,7 +14,7 @@ type ControladorServidor struct {
 
 // AudioStream es la implementación del procedimiento remoto.
 func (s *ControladorServidor) AudioStream(req *pb.AudioRequest, stream pb.AudioService_AudioStreamServer) error {
-	// eco requerido: llamada a procedimiento remoto gRPC
+	// eco : llamada a procedimiento remoto gRPC
 	log.Printf("[gRPC] AudioStream invocado: id=%d titulo=%q tipo=%q",
 		req.IdAudio, req.TituloAudio, req.TipoAudio)
 
